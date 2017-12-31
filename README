@@ -1,0 +1,5 @@
+This program will get a list of seeding torrents and for every torrent check
+the ratio and age. If the ratio is above 1.5 or the torrent is older than 3
+weeks, the base path is checked to determine if the torrent is a movie or a
+series. If that's the case, the torrent is removed and then the files are
+erased.
