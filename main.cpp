@@ -2,6 +2,8 @@
 
 #include <xmlrpc-c/client_simple.hpp>
 
+#include <algorithm>
+#include <array>
 #include <ftw.h>
 #include <iostream>
 #include <stdio.h>
@@ -65,6 +67,15 @@ xmlrpc_c::value_int Erase(const xmlrpc_c::value_string& hash)
 	return GetTorrentInfo("d.erase", hash);
 }
 
+bool IsMovieOrSeries(const std::string& path)
+{
+	static const std::array<std::string, 3> needles{"tv", "movie", "anime"};
+	auto it = std::find_if(begin(needles), end(needles),
+	                       [&](const std::string& n)
+			       { return path.find(std::string("rtorrent/") + n) != std::string::npos; });
+	return it != end(needles);
+}
+
 int unlink_cb(const char* path, const struct stat*, int, struct FTW*)
 {
 	int rv = remove(path);
@@ -84,16 +95,18 @@ int main(int argc, char* argv[])
 			xmlrpc_c::value_i8 age = GetTorrentAge(t);
 			if (ratio > g_MinimumRatio || age > g_MinimumAge) {
 				std::string path = GetBasePath(t);
-				if (0 == Erase(t)) {
-					if (0 == nftw(path.c_str(), unlink_cb, 64, FTW_DEPTH | FTW_PHYS)) {
-						std::cout << "Removed \'" << path << "\'" << std::endl;
+				if (IsMovieOrSeries(path)) {
+					if (0 == Erase(t)) {
+						if (0 == nftw(path.c_str(), unlink_cb, 64, FTW_DEPTH | FTW_PHYS)) {
+							std::cout << "Removed \'" << path << "\'" << std::endl;
+						}
+						else {
+							std::cerr << "Failed to erase \'" << path << "\'" << std::endl;
+						}
 					}
 					else {
-						std::cerr << "Failed to erase \'" << path << "\'" << std::endl;
+						std::cerr << "Failed to remove torrent: " << t.cvalue() << std::endl;
 					}
-				}
-				else {
-					std::cerr << "Failed to remove torrent: " << t.cvalue() << std::endl;
 				}
 			}
 		}
