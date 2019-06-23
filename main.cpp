@@ -69,11 +69,20 @@ xmlrpc_c::value_int Erase(const xmlrpc_c::value_string& hash)
 
 bool IsMovieOrSeries(const std::string& path)
 {
-	static const std::array<std::string, 3> needles{"tv", "movie", "anime"};
+	static const std::string rtorrent("/rtorrent");
+	static const std::array<std::string, 3> needles{"/tv", "/movie", "/anime"};
 	auto it = std::find_if(begin(needles), end(needles),
 	                       [&](const std::string& n)
-			       { return path.find(std::string("rtorrent/") + n) != std::string::npos; });
-	return it != end(needles);
+			       { return path.find(rtorrent + n) != std::string::npos; });
+	if (it != end(needles)) {
+		return true;
+	}
+	// check if torrent is placed directly in the '/rtorrent' folder
+	const std::string base = path.substr(0, path.find_last_of('/'));
+	if (base.substr(base.find_last_of('/')) == rtorrent) {
+		return true;
+	}
+	return false;
 }
 
 int unlink_cb(const char* path, const struct stat*, int, struct FTW*)
@@ -96,6 +105,7 @@ int main(int argc, char* argv[])
 			if (ratio > g_MinimumRatio || age > g_MinimumAge) {
 				std::string path = GetBasePath(t);
 				if (IsMovieOrSeries(path)) {
+#ifdef ERASE_FOR_REAL
 					if (0 == Erase(t)) {
 						if (0 == nftw(path.c_str(), unlink_cb, 64, FTW_DEPTH | FTW_PHYS)) {
 							std::cout << "Removed \'" << path << "\'" << std::endl;
@@ -107,6 +117,9 @@ int main(int argc, char* argv[])
 					else {
 						std::cerr << "Failed to remove torrent: " << t.cvalue() << std::endl;
 					}
+#else
+					std::cout << "Would have removed \'" << path << "\'" << std::endl;
+#endif
 				}
 			}
 		}
