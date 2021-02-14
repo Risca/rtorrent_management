@@ -47,19 +47,19 @@ xmlrpc_c::value GetTorrentInfo(const char* method, const xmlrpc_c::value_string&
 
 xmlrpc_c::value_i8 GetTorrentRatio(const xmlrpc_c::value_string& hash)
 {
-	return GetTorrentInfo("d.get_ratio", hash);
+	return GetTorrentInfo("d.ratio", hash);
 }
 
 xmlrpc_c::value_i8 GetTorrentAge(const xmlrpc_c::value_string& hash)
 {
 	const xmlrpc_c::value_i8 now = time(NULL);
-	const xmlrpc_c::value_i8 ts = GetTorrentInfo("d.get_state_changed", hash);
+	const xmlrpc_c::value_i8 ts = GetTorrentInfo("d.state_changed", hash);
 	return now - ts;
 }
 
 xmlrpc_c::value_string GetBasePath(const xmlrpc_c::value_string& hash)
 {
-	return GetTorrentInfo("d.get_base_path", hash);
+	return GetTorrentInfo("d.base_path", hash);
 }
 
 xmlrpc_c::value_int Erase(const xmlrpc_c::value_string& hash)
